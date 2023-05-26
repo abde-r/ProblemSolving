@@ -1,3 +1,23 @@
+import sys
+
+def _are_eggs_around_base(cells, cell, close_eggs):
+    print("jiran: ", cell.neighbors, file=sys.stderr, flush=True)
+    for i in range(len(cell.neighbors)):
+        print("neighghghghghgh", cells[cell.neighbors[i]].cell_type, file=sys.stderr, flush=True)
+        if cells[cell.neighbors[i]].cell_type == 1 and cells[cell.neighbors[i]].resources:
+            close_eggs.append(cell.neighbors[i])
+    # print("jiran 0: ", cell.neighbors[0], file=sys.stderr, flush=True)
+    # print("jiran 1: ", cell.neighbors[1], file=sys.stderr, flush=True)
+    # print("jiran 2: ", cell.neighbors[2], file=sys.stderr, flush=True)
+    # print("jiran 3: ", cell.neighbors[3], file=sys.stderr, flush=True)
+    # print("jiran 4: ", cell.neighbors[4], file=sys.stderr, flush=True)
+    # print("jiran 5: ", cell.neighbors[5], file=sys.stderr, flush=True)
+    # print('gg')
+    if len(close_eggs):
+        return 1
+    print("eggs are here", close_eggs, file=sys.stderr, flush=True)
+    return 0
+
 class Cell(object):
     index: int
     cell_type: int
@@ -17,6 +37,12 @@ class Cell(object):
 
 cells: list[Cell] = []
 
+####
+# crystal_pos = []
+egg_pos = []
+crystal_qty = []
+# close_eggs = []
+####
 number_of_cells = int(input())  # amount of hexagonal cells in this map
 for i in range(number_of_cells):
     inputs = [int(j) for j in input().split()]
@@ -37,6 +63,8 @@ for i in range(number_of_cells):
         opp_ants = 0
     )
     cells.append(cell)
+
+
 number_of_bases = int(input())
 my_bases: list[int] = []
 for i in input().split():
@@ -49,6 +77,7 @@ for i in input().split():
 
 # game loop
 while True:
+    crystal_pos = []
     for i in range(number_of_cells):
         inputs = [int(j) for j in input().split()]
         resources = inputs[0] # the current amount of eggs/crystals on this cell
@@ -59,20 +88,54 @@ while True:
         cells[i].my_ants = my_ants
         cells[i].opp_ants = opp_ants
 
-        # for i in range()
-    print('BEACON 2 1;BEACON 6 1;BEACON 23 1;BEACON 16 1;BEACON 28 1')
+        if resources > 0:
+            if cells[i].cell_type == 1:
+                egg_pos.append(i)
+            elif cells[i].cell_type == 2:
+                # check if the neighbors of the crystal cell is some other crystal
+                # if _is_neighbor_of_crystal_crystal():
+                crystal_pos.append(i)
+            crystal_qty.append(resources)
+
+    # check if some eggs are around the base
+    close_eggs = []
+    # sorted(crystal_pos)
+    if _are_eggs_around_base(cells, cells[my_bases[0]], close_eggs):
+        # go for eggs only first
+        for i in range(len(close_eggs)):
+            print("eggs around", close_eggs[i], file=sys.stderr, flush=True)
+            print('LINE ' + str(my_bases[0]) + ' ' + str(close_eggs[i]) + ' ' + str(1) , end=';')
+            # print('BEACON ' + str(close_eggs[i]) + ' ' + str(1) , end=';')
+    else:
+        # the normal routine
+    # if cells.neighbors[neigh_0].cell_type == 1:
+
+    # print("resources type: ", cells[i].cell_type, file=sys.stderr, flush=True)
+    # sorted(crystal_pos)
+    # for i in range(len(crystal_pos)):
+    #     print("poses: ", crystal_pos[i], " qty: ", crystal_qty[i], file=sys.stderr, flush=True)
+        for i in range(len(crystal_pos)):
+                # print('BEACON 2 1;BEACON 6 1;BEACON 23 1;BEACON 16 1;BEACON 28 1;BEACON 21 1')
+            # print("distance", my_bases[0] - crystal_pos[i], file=sys.stderr, flush=True)
+            # if my_bases[0] - crystal_qty[i] < 50:
+
+
+            print('LINE ' + str( my_bases[0]) + ' ' + str(crystal_pos[i]) + ' ' + str(1) , end=';')
+            # else:
+            #     print('LINE ' + str( my_bases[0]) + ' ' + str(crystal_pos[i]) + ' ' + str(1) , end=';')
+    print()
 
     # for i in range(len(cells)):
     #     if cells[i].resources:
     #         print('BEACON', i, 2)
     #         print('BEACON', i, 4)
-            
+
 
 
     # WAIT | LINE <sourceIdx> <targetIdx> <strength> | BEACON <cellIdx> <strength> | MESSAGE <text>
-    actions = []
+    # actions = []
     # print("base pos: ", my_bases[0])
-    
+
     # for now
     # _pos = my_bases[0]
     # for i in range(len(cells)):
@@ -85,3 +148,4 @@ while True:
     #     print('WAIT')
     # else:
     #     print(';'.join(actions))
+
