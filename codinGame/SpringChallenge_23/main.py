@@ -84,7 +84,7 @@ def _are_eggs_around_base(cells, cell, close_eggs):
 
 def get_eggs_around_base(cells, cell, egg_pos, close_eggs, ma_base):
     for i in range(len(egg_pos)):
-        if len(_BFS_(map_graph,ma_base, egg_pos[i])) <= 3:# and cells[egg_pos[i]].resources > 5:
+        if len(_BFS_(map_graph,ma_base, egg_pos[i])) <= 3:# and cells[egg_pos[i]].resources >= 10:
             close_eggs.append(egg_pos[i])
     if len(close_eggs):
         return 1
@@ -112,6 +112,41 @@ def get_eggs_around_base_v2(cells, cell, egg_pos, close_eggs, ma_base):
     print("eggs are here v2", close_eggs, file=sys.stderr, flush=True)
     return 0
 
+def get_egg_paths( egg_pos, egg_list, base ):
+    global _EGG_DIAM
+    egg_paths = []
+    if len(egg_pos):
+        for i in range(len(egg_pos)):
+            egg_paths.append(_BFS_(map_graph, base, egg_pos[i]))
+            # print("base: ", base, "egg_paths: ", egg_paths, file=sys.stderr, flush=True)
+        _EGG_DIAM = len(min(egg_paths, key=len))
+        list_count = 0
+        print("_EGG_DIAM: ", _EGG_DIAM, "egg_paths: ", egg_paths, file=sys.stderr, flush=True)
+        while list_count<(initial_num_of_egg_cells//2) and list_count<len(egg_paths):
+            for i in range(len(egg_paths)):
+                if len(egg_paths[i]) <= _EGG_DIAM and list_count<(initial_num_of_egg_cells//2) and egg_paths[i] not in egg_list:
+                    egg_list.append(egg_paths[i])
+                    list_count+=1
+            _EGG_DIAM += 2
+        print("eggs list is: ", egg_list, file=sys.stderr, flush=True)
+
+def get_crystal_paths( crystal_pos, crystal_list, base ):
+    global _CRYSTAL_DIAM
+    crystal_paths = []
+    if len(crystal_pos):
+        for i in range(len(crystal_pos)):
+            crystal_paths.append(_BFS_(map_graph, base, crystal_pos[i]))
+            # print("base: ", base, "egg_paths: ", egg_paths, file=sys.stderr, flush=True)
+        _CRYSTAL_DIAM = len(min(crystal_paths, key=len))
+        list_count = 0
+        print("_CRYSTAL_DIAM: ", _CRYSTAL_DIAM, "crystal_paths: ", crystal_paths, file=sys.stderr, flush=True)
+        while list_count<=(initial_num_of_crystal_cells//2) and list_count<len(crystal_paths):
+            for i in range(len(crystal_paths)):
+                if len(crystal_paths[i]) <= _CRYSTAL_DIAM and list_count<=(initial_num_of_crystal_cells//2) and crystal_paths[i] not in crystal_list:
+                    crystal_list.append(crystal_paths[i])
+                    list_count+=1
+            _CRYSTAL_DIAM += 2
+        print("crystal list is: ", crystal_list, file=sys.stderr, flush=True)
 
 
 # def _are_crystals_around_base(cells, cell, close_crystals):
@@ -151,6 +186,8 @@ class Cell(object):
 
 cells: list[Cell] = []
 _C = 3
+_EGG_DIAM = 0
+_CRYSTAL_DIAM = 0
 ####
 # crystal_pos = []
 # egg_pos = []
@@ -201,10 +238,14 @@ li_fihom = []
 
 ind = 0
 vv = 0
+
+initial_num_of_crystal_cells = 0
+initial_num_of_egg_cells = 0
+
 while True:
     crystal_pos = []
     egg_pos = []
-    print("graph", map_graph, file=sys.stderr, flush=True)
+    # print("graph", map_graph, file=sys.stderr, flush=True)
     # _BFS_(map_graph, 3, 23)
     
     _ANTS_SUM = 0
@@ -232,6 +273,7 @@ while True:
                 egg_pos.append(i)
                 if not ind:
                     initial_EGG_SUM += cells[i].resources
+                    initial_num_of_egg_cells += 1
                 _EGG_SUM += cells[i].resources
             elif cells[i].cell_type == 2:
                 # check if the neighbors of the crystal cell is some other crystal
@@ -239,69 +281,120 @@ while True:
                 crystal_pos.append(i)
                 if not ind:
                     initial_CRYS_SUM += cells[i].resources
+                    initial_num_of_crystal_cells += 1
                 _CRYS_SUM += cells[i].resources
             crystal_qty.append(resources)
         
         _ANTS_SUM += my_ants
         _OPP_ANTS_SUM += opp_ants
     if not ind:
-        vv = _CRYS_SUM-_ANTS_SUM
+        vv = _CRYS_SUM//4#-_ANTS_SUM
     ind+=1
     if initial_EGG_SUM < initial_CRYS_SUM:
-        vv = (_EGG_SUM*3)//4
+        # vv = (_EGG_SUM*3)//4
+        vv = _CRYS_SUM//4
     # else:
     #     vv = _CRYS_SUM
-    print("my egg sum: ", _EGG_SUM, "\nmy crystal sum: ", _CRYS_SUM, "\nmy ants sum: ", _ANTS_SUM, "\nand I need: ", vv, file=sys.stderr, flush=True)
+    print("my egg sum: ", _EGG_SUM, "\nmy crystal sum: ", _CRYS_SUM, "\nmy ants sum: ", _ANTS_SUM, "\nand I need: ", vv, "\nmy score: ", my_score, "\nopp score: ", opp_score, "\nzblll", initial_num_of_crystal_cells, file=sys.stderr, flush=True)
     
     
-    for base in range(len(my_bases)):    
-        print("~~~~~~~~~ base num: ", my_bases[base], file=sys.stderr, flush=True)
-        # check if some eggs are around the base
-        close_eggs = []
-        close_crystals = []
-        printed_cells = []
-        # sorted(crystal_pos)
-        # if _are_eggs_around_base(cells, cells[my_bases[0]], close_eggs):
-        if get_eggs_around_base(cells, cells[my_bases[base]], egg_pos, close_eggs, my_bases[base]):
-            # go for eggs only first
-            print("eggs around", close_eggs, file=sys.stderr, flush=True)
-            for i in range(len(close_eggs)):
-                print('LINE ' + str(my_bases[base]) + ' ' + str(close_eggs[i]) + ' ' + str(1) , end=';')
-                # print('LINE ' + str(close_eggs[i]) + ' ' + str(my_bases[0]) + ' ' + str(5) , end=';')
-                # bfs_list = _BFS_(map_graph, my_bases[base], close_eggs[i])
-                # # print("bfs path for close egg: ", len(bfs_list), file=sys.stderr, flush=True)
-                # for x in range(len(bfs_list)):
-                #     # print("bfs dyal i: ", bfs_list[x], file=sys.stderr, flush=True)
-                #     if bfs_list[x] not in printed_cells:
-                #         print('BEACON ' + str(bfs_list[x]) + ' ' + str(1) , end=';')
-                #         printed_cells.append(bfs_list[x])
-            
-            # for i in range(len(crystal_pos)):
-            #     print('LINE ' + str( my_bases[0]) + ' ' + str(crystal_pos[i]) + ' ' + str(1) , end=';')
-            # if _are_crystals_around_base(cells, cells[my_bases[0]], close_crystals):
-            #     # go for crystals around base with BEACON commande
-            #     for i in range(len(close_crystals)):
-            #         # print("eggs around", close_eggs[i], file=sys.stderr, flush=True)
-            #         print('BEACON ' + str(close_crystals[i]) + ' ' + str(1) , end=';')
-        elif not get_eggs_around_base(cells, cells[my_bases[base]], egg_pos, close_eggs, my_bases[base]) and _ANTS_SUM <= vv and _EGG_SUM > 0:
+    for base in range(len(my_bases)):
+        egg_list = []
+        crystal_list = []
+        get_egg_paths(egg_pos, egg_list, my_bases[base])
+        get_crystal_paths(crystal_pos, crystal_list, my_bases[base])
+        if len(egg_list) > 0 and _ANTS_SUM >= (vv//2) and _EGG_SUM > 0:
             print("mal mayn mok", file=sys.stderr, flush=True)
-            for i in range(len(egg_pos)):
-                print('LINE ' + str(my_bases[base]) + ' ' + str(egg_pos[i]) + ' ' + str(1) , end=';')
+            for i in range(len(egg_list)):
+                bfs_list = _BFS_(map_graph, my_bases[base], egg_list[i][len(egg_list[i])-1])
+                # print("bitta: ", egg_list[i][len(egg_list[i])-1], file=sys.stderr, flush=True)
+                for j in range(len(bfs_list)):
+                    print('BEACON ' + str(bfs_list[j]) + ' ' + str(1) , end=';')
+            if len(crystal_list) > 0:
+                print("crystaliyaa", file=sys.stderr, flush=True)
+                for i in range(len(crystal_list)):
+                    # for bfsa in range(len(crystal_list[c])):
+                    bfs_list = _BFS_(map_graph, my_bases[base], crystal_list[i][len(crystal_list[i])-1])
+                    # print("bfs for: ", crystal_pos[bfsa] ," is: ", _BFS_(map_graph, my_bases[base], crystal_pos[bfsa]), file=sys.stderr, flush=True)
+                    for x in range(len(bfs_list)):
+                        print('BEACON ' + str(bfs_list[x]) + ' ' + str(10) , end=';')
+        elif len(egg_list) > 0 and _ANTS_SUM <= vv and _EGG_SUM > 0:
+            print("mal mok", file=sys.stderr, flush=True)
+            for i in range(len(egg_list)):
+                bfs_list = _BFS_(map_graph, my_bases[base], egg_list[i][len(egg_list[i])-1])
+                # print("bitta: ", egg_list[i][len(egg_list[i])-1], file=sys.stderr, flush=True)
+                for j in range(len(bfs_list)):
+                    print('BEACON ' + str(bfs_list[j]) + ' ' + str(1) , end=';')
         else:
-            # the normal routine
-        # if cells.neighbors[neigh_0].cell_type == 1:
+            if len(crystal_list) > 0:
+                print("crystaliyaa", file=sys.stderr, flush=True)
+                for i in range(len(crystal_list)):
+                    # for bfsa in range(len(crystal_list[c])):
+                    bfs_list = _BFS_(map_graph, my_bases[base], crystal_list[i][len(crystal_list[i])-1])
+                    # print("bfs for: ", crystal_pos[bfsa] ," is: ", _BFS_(map_graph, my_bases[base], crystal_pos[bfsa]), file=sys.stderr, flush=True)
+                    for x in range(len(bfs_list)):
+                        print('BEACON ' + str(bfs_list[x]) + ' ' + str(1) , end=';')
 
-            print("noo eggs", file=sys.stderr, flush=True)
-        # sorted(crystal_pos)
-        # for i in range(len(crystal_pos)):
-            print("crystal pos: ", crystal_pos, file=sys.stderr, flush=True)
+        # print("~~~~~~~~~ base num: ", my_bases[base], file=sys.stderr, flush=True)
+        # # check if some eggs are around the base
+        # close_eggs = []
+        # close_crystals = []
+        # printed_cells = []
+        # # sorted(crystal_pos)
+        # # if _are_eggs_around_base(cells, cells[my_bases[0]], close_eggs):
+        # if get_eggs_around_base(cells, cells[my_bases[base]], egg_pos, close_eggs, my_bases[base]):
+        #     # go for eggs only first
+        #     print("eggs around", close_eggs, file=sys.stderr, flush=True)
+        #     for i in range(len(close_eggs)):
+        #         print('LINE ' + str(my_bases[base]) + ' ' + str(close_eggs[i]) + ' ' + str(1) , end=';')
+        #         # for n in cells[close_eggs[i]].neighbors:
+        #         #     # print("egg neihbors for: ", close_eggs, "is: ", cells[close_eggs[i]].neighbors, file=sys.stderr, flush=True)
+        #         #     if cells[n].resources == 2:
+        #         #         print('LINE ' + str(close_eggs[i]) + ' ' + str(n) + ' ' + str(1) , end=';')
+        #         # print('LINE ' + str(close_eggs[i]) + ' ' + str(my_bases[0]) + ' ' + str(5) , end=';')
+        #         # bfs_list = _BFS_(map_graph, my_bases[base], close_eggs[i])
+        #         # # print("bfs path for close egg: ", len(bfs_list), file=sys.stderr, flush=True)
+        #         # for x in range(len(bfs_list)):
+        #         #     # print("bfs dyal i: ", bfs_list[x], file=sys.stderr, flush=True)
+        #         #     if bfs_list[x] not in printed_cells:
+        #         #         print('BEACON ' + str(bfs_list[x]) + ' ' + str(1) , end=';')
+        #         #         printed_cells.append(bfs_list[x])
+            
+        #     # for i in range(len(crystal_pos)):
+        #     #     print('LINE ' + str( my_bases[0]) + ' ' + str(crystal_pos[i]) + ' ' + str(1) , end=';')
+        #     # if _are_crystals_around_base(cells, cells[my_bases[0]], close_crystals):
+        #     #     # go for crystals around base with BEACON commande
+        #     #     for i in range(len(close_crystals)):
+        #     #         # print("eggs around", close_eggs[i], file=sys.stderr, flush=True)
+        #     #         print('BEACON ' + str(close_crystals[i]) + ' ' + str(1) , end=';')
+        # elif not get_eggs_around_base(cells, cells[my_bases[base]], egg_pos, close_eggs, my_bases[base]) and _ANTS_SUM <= vv and _EGG_SUM > 0:# and my_score > opp_score*2:
+        #     print("mal mayn mok", file=sys.stderr, flush=True)
+        #     for i in range(len(egg_pos)):
+        #         print('LINE ' + str(my_bases[base]) + ' ' + str(egg_pos[i]) + ' ' + str(1) , end=';')
+        #         # for n in range(len(cells[egg_pos[i]].neighbors)):
+        #         #     print("egg neihbors for: ", egg_pos[i], "is: ", cells[cells[egg_pos[i]].neighbors[n]].cell_type, file=sys.stderr, flush=True)
+        #         #     if cells[cells[egg_pos[i]].neighbors[n]].resources and cells[cells[egg_pos[i]].neighbors[n]].cell_type == 2:
+        #         #         print('BEACON ' + str(cells[egg_pos[i]].neighbors[n]) + ' ' + str(1) , end=';')
+        # else:
+        #     # the normal routine
+        # # if cells.neighbors[neigh_0].cell_type == 1:
 
-            # close_crystals = []
-            # fare_ones = []
+        #     print("noo eggs", file=sys.stderr, flush=True)
+        # # sorted(crystal_pos)
+        # # for i in range(len(crystal_pos)):
+        #     print("crystal pos: ", crystal_pos, file=sys.stderr, flush=True)
 
-            # get_close_crystals(cells, cells[my_bases[base]], crystal_pos, close_crystals, my_bases[base])
-            for i in range(len(crystal_pos)):
-                print('LINE ' + str(my_bases[base])+ ' ' + str(crystal_pos[i]) + ' ' + str(1) , end=';')
+        #     # close_crystals = []
+        #     # fare_ones = []
+
+        #     # get_close_crystals(cells, cells[my_bases[base]], crystal_pos, close_crystals, my_bases[base])
+        #     for bfsa in range(len(crystal_pos)):
+        #         bfs_list = _BFS_(map_graph, my_bases[base], crystal_pos[bfsa])
+        #         print("bfs for: ", crystal_pos[bfsa] ," is: ", _BFS_(map_graph, my_bases[base], crystal_pos[bfsa]), file=sys.stderr, flush=True)
+        #         for x in range(len(bfs_list)):
+        #             print('BEACON ' + str(bfs_list[x]) + ' ' + str(1) , end=';')
+            # for i in range(len(crystal_pos)):
+            #     print('LINE ' + str(my_bases[base])+ ' ' + str(crystal_pos[i]) + ' ' + str(1) , end=';')
                 
             # get_eggs_around_base_v2(cells, cells[my_bases[base]], egg_pos, close_eggs, my_bases[base])
             # if not len(close_eggs):
@@ -372,6 +465,7 @@ while True:
 
             #     print('LINE ' + str(temp_start_point) + ' ' + str(fare_ones[i]) + ' ' + str(1) , end=';')
         print('WAIT' , end=';')
+        print('MESSAGE' , 'DIMA KOKAB', end=';')
             
     print()
 
